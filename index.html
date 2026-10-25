@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연세대학교 회계원리 실습 시뮬레이터 (제4장)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        @keyframes strongHighlight {
+            0% { background-color: #fde047; font-weight: bold; transform: scale(1.02); }
+            100% { background-color: transparent; font-weight: normal; transform: scale(1); }
+        }
+        .animate-strong-highlight {
+            animation: strongHighlight 1.8s ease-out;
+        }
+        @keyframes ledgerHighlight {
+            0% { background-color: #fef08a; border-color: #eab308; transform: scale(1.02); }
+            100% { background-color: rgba(254, 243, 199, 0.6); border-color: #fcd34d; transform: scale(1); }
+        }
+        .animate-ledger-highlight {
+            animation: ledgerHighlight 1.8s ease-out;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        function App() {
+            const [step, setStep] = React.useState(0);
+            const [isClosed, setIsClosed] = React.useState(false);
+            const [animatingAccounts, setAnimatingAccounts] = React.useState([]);
+            const [showFullLedger, setShowFullLedger] = React.useState(false);
+
+            const transactions = [
+                { id: 0, title: "초기 상태", desc: "모든 계정이 0원으로 시작합니다.", debit: "-", credit: "-", targets: [] },
+                { id: 1, title: "① 1월 5일: 현금출자", desc: "현금 100,000원을 출자하여 영업을 시작하다.", debit: "현금 100,000", credit: "자본금 100,000", targets: ['cash', 'capital'] },
+                { id: 2, title: "② 1월 31일: 토지·건물 취득", desc: "토지(20,000)와 건물(50,000) 취득, 현금 70,000 지급", debit: "토지 20,000 / 건물 50,000", credit: "현금 70,000", targets: ['land', 'building', 'cash'] },
+                { id: 3, title: "③ 2월 5일: 상품 매입", desc: "상품 100,000원을 외상(매입채무)으로 매입하다.", debit: "상품 100,000", credit: "매입채무 100,000", targets: ['merchandise', 'ap'] },
+                { id: 4, title: "④ 3월 15일: 비품 취득", desc: "비품 10,000원을 미지급금으로 취득하다.", debit: "비품 10,000", credit: "미지급금 10,000", targets: ['equipment', 'otherPayable'] },
+                { id: 5, title: "⑤ 4월 17일: 미지급금 지급", desc: "미지급금 8,000원을 현금으로 지급하다.", debit: "미지급금 8,000", credit: "현금 8,000", targets: ['otherPayable', 'cash'] },
+                { id: 6, title: "⑥ 6월 20일: 상품 판매 및 원가", desc: "상품 매출 100,000원(현금수령), 매출원가 50,000원", debit: "현금 100,000 / 매출원가 50,000", credit: "매출 100,000 / 상품 50,000", targets: ['cash', 'cogs', 'sales', 'merchandise'] },
+                { id: 7, title: "⑦ 7월 1일: 외상매출 및 원가", desc: "상품 매출 8,000원(외상매출채권), 매출원가 5,000원", debit: "매출채권 8,000 / 매출원가 5,000", credit: "매출 8,000 / 상품 5,000", targets: ['ar', 'cogs', 'sales', 'merchandise'] },
+                { id: 8, title: "⑧ 8월 31일: 소모품비 지출", desc: "소모품비 2,400원을 현금으로 지급하다.", debit: "소모품비 2,400", credit: "현금 2,400", targets: ['suppliesExp', 'cash'] },
+                { id: 9, title: "⑨ 9월 15일: 매출채권 회수", desc: "매출채권 6,000원을 현금으로 회수하다.", debit: "현금 6,000", credit: "매출채권 6,000", targets: ['cash', 'ar'] },
+                { id: 10, title: "⑩ 10월 1일: 보험료 선급", desc: "보험료 3,600원을 현금으로 미리 지급하다(선급보험료).", debit: "선급보험료 3,600", credit: "현금 3,600", targets: ['prepaidIns', 'cash'] },
+                { id: 11, title: "⑪ 12월 31일: 임차료 지급", desc: "임차료 20,000원을 현금으로 지급하다.", debit: "임차료 20,000", credit: "현금 20,000", targets: ['rentExp', 'cash'] },
+                { id: 12, title: "⑫ [결산] 감가상각비 계상", desc: "건물 감가상각 500, 비품 감가상각 400 계상", debit: "감가상각비 900", credit: "건물감가상각누계액 500 / 비품감가상각누계액 400", targets: ['depExp', 'buildingAcc', 'equipmentAcc'] },
+                { id: 13, title: "⑬ [결산] 대손상각비 계상", desc: "기말 매출채권에 대한 대손상각비 200 계상", debit: "대손상각비 200", credit: "대손충당금 200", targets: ['badDebtExp', 'allowance'] },
+                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 실사 결과 미사용액 2,000 확인", debit: "소모품비 2,000", credit: "소모품 2,000", targets: ['suppliesExp', 'supplies'] },
+                { id: 15, title: "⑮ [결산] 선급보험료 조정", desc: "당기 경과분(10~12월) 900 비용 대체", debit: "보험료 900", credit: "선급보험료 900", targets: ['insuranceExp', 'prepaidIns'] }
+            ];
+
+            const handleStepChange = (newStep) => {
+                setStep(newStep);
+                setIsClosed(false);
+                setAnimatingAccounts([]);
+                setTimeout(() => {
+                    setAnimatingAccounts(transactions[newStep].targets || []);
+                }, 300);
+            };
+
+            const calculateLedgerAndBalances = (currentStep, closed) => {
+                let ledger = {
+                    cash: { name: "현금", debit: [], credit: [] },
+                    ar: { name: "매출채권", debit: [], credit: [] },
+                    allowance: { name: "대손충당금", debit: [], credit: [] },
+                    prepaidIns: { name: "선급보험료", debit: [], credit: [] },
+                    merchandise: { name: "상품", debit: [], credit: [] },
+                    supplies: { name: "소모품", debit: [], credit: [] },
+                    equipment: { name: "비품", debit: [], credit: [] },
+                    equipmentAcc: { name: "비품감가상각누계액", debit: [], credit: [] },
+                    building: { name: "건물", debit: [], credit: [] },
+                    buildingAcc: { name: "건물감가상각누계액", debit: [], credit: [] },
+                    land: { name: "토지", debit: [], credit: [] },
+                    ap: { name: "매입채무", debit: [], credit: [] },
+                    otherPayable: { name: "미지급금", debit: [], credit: [] },
+                    capital: { name: "자본금", debit: [], credit: [] },
+                    retainedEarnings: { name: "이익잉여금", debit: [], credit: [] },
+                    sales: { name: "매출", debit: [], credit: [] },
+                    cogs: { name: "매출원가", debit: [], credit: [] },
+                    suppliesExp: { name: "소모품비", debit: [], credit: [] },
+                    rentExp: { name: "임차료", debit: [], credit: [] },
+                    badDebtExp: { name: "대손상각비", debit: [], credit: [] },
+                    depExp: { name: "감가상각비", debit: [], credit: [] },
+                    insuranceExp: { name: "보험료", debit: [], credit: [] },
+                };
+
+                let balances = {
+                    cash: 0, ar: 0, allowance: 0, prepaidIns: 0, merchandise: 0, supplies: 0,
+                    equipment: 0, equipmentAcc: 0, building: 0, buildingAcc: 0, land: 0,
+                    ap: 0, otherPayable: 0, capital: 0, retainedEarningsBase: 0,
+                    sales: 0, cogs: 0, suppliesExp: 0, rentExp: 0, badDebtExp: 0, depExp: 0, insuranceExp: 0
+                };
+
+                for (let i = 1; i <= currentStep; i++) {
+                    if (i === 1) { ledger.cash.debit.push("① 100,000"); balances.cash += 100000; ledger.capital.credit.push("① 100,000"); balances.capital += 100000; }
+                    if (i === 2) { ledger.land.debit.push("② 20,000"); balances.land += 20000; ledger.building.debit.push("② 50,000"); balances.building += 50000; ledger.cash.credit.push("② 70,000"); balances.cash -= 70000; }
+                    if (i === 3) { ledger.merchandise.debit.push("③ 100,000"); balances.merchandise += 100000; ledger.ap.credit.push("③ 100,000"); balances.ap += 100000; }
+                    if (i === 4) { ledger.equipment.debit.push("④ 10,000"); balances.equipment += 10000; ledger.otherPayable.credit.push("④ 10,000"); balances.otherPayable += 10000; }
+                    if (i === 5) { ledger.otherPayable.debit.push("⑤ 8,000"); balances.otherPayable -= 8000; ledger.cash.credit.push("⑤ 8,000"); balances.cash -= 8000; }
+                    if (i === 6) { ledger.cash.debit.push("⑥ 100,000"); balances.cash += 100000; ledger.cogs.debit.push("⑥ 50,000"); balances.cogs += 50000; ledger.sales.credit.push("⑥ 100,000"); balances.sales += 100000; ledger.merchandise.credit.push("⑥ 50,000"); balances.merchandise -= 50000; }
+                    if (i === 7) { ledger.ar.debit.push("⑦ 8,000"); balances.ar += 8000; ledger.cogs.debit.push("⑦ 5,000"); balances.cogs += 5000; ledger.sales.credit.push("⑦ 8,000"); balances.sales += 8000; ledger.merchandise.credit.push("⑦ 5,000"); balances.merchandise -= 5000; }
+                    if (i === 8) { ledger.suppliesExp.debit.push("⑧ 2,400"); balances.suppliesExp += 2400; ledger.cash.credit.push("⑧ 2,400"); balances.cash -= 2400; }
+                    if (i === 9) { ledger.cash.debit.push("⑨ 6,000"); balances.cash += 6000; ledger.ar.credit.push("⑨ 6,000"); balances.ar -= 6000; }
+                    if (i === 10) { ledger.prepaidIns.debit.push("⑩ 3,600"); balances.prepaidIns += 3600; ledger.cash.credit.push("⑩ 3,600"); balances.cash -= 3600; }
+                    if (i === 11) { ledger.rentExp.debit.push("⑪ 20,000"); balances.rentExp += 20000; ledger.cash.credit.push("⑪ 20,000"); balances.cash -= 20000; }
+                    if (i === 12) { ledger.depExp.debit.push("⑫ 900"); balances.depExp += 900; ledger.buildingAcc.credit.push("⑫ 500"); balances.buildingAcc += 500; ledger.equipmentAcc.credit.push("⑫ 400"); balances.equipmentAcc += 400; }
+                    if (i === 13) { ledger.badDebtExp.debit.push("⑬ 200"); balances.badDebtExp += 200; ledger.allowance.credit.push("⑬ 200"); balances.allowance += 200; }
+                    if (i === 14) { ledger.suppliesExp.debit.push("⑭ 2,000"); balances.suppliesExp += 2000; ledger.supplies.credit.push("⑭ 2,000"); balances.supplies += 2000; }
+                    if (i === 15) { ledger.insuranceExp.debit.push("⑮ 900"); balances.insuranceExp += 900; ledger.prepaidIns.credit.push("⑮ 900"); balances.prepaidIns -= 900; }
+                }
+
+                const totalRev = balances.sales;
+                const totalExp = balances.cogs + balances.suppliesExp + balances.rentExp + balances.badDebtExp + balances.depExp + balances.insuranceExp;
+                const netIncome = totalRev - totalExp;
+
+                if (closed) {
+                    ledger.retainedEarnings.credit.push(`ⓖ 순이익 대체: ${netIncome.toLocaleString()}`);
+                    if (balances.sales > 0) ledger.sales.debit.push(`ⓐ 집합손익 대체`);
+                    if (balances.cogs > 0) ledger.cogs.credit.push(`ⓑ 집합손익 대체`);
+                    if (balances.suppliesExp > 0) ledger.suppliesExp.credit.push(`ⓒ 집합손익 대체`);
+                    if (balances.rentExp > 0) ledger.rentExp.credit.push(`ⓓ 집합손익 대체`);
+                    if (balances.badDebtExp > 0) ledger.badDebtExp.credit.push(`ⓔ 집합손익 대체`);
+                    if (balances.depExp > 0) ledger.depExp.credit.push(`ⓕ 집합손익 대체`);
+                    if (balances.insuranceExp > 0) ledger.insuranceExp.credit.push(`ⓖ 집합손익 대체`);
+
+                    ledger.cash.credit.push(`차기이월 ${balances.cash.toLocaleString()}`);
+                    if (balances.ar > 0) ledger.ar.credit.push(`차기이월 ${balances.ar.toLocaleString()}`);
+                    if (balances.allowance > 0) ledger.allowance.debit.push(`차기이월 ${balances.allowance.toLocaleString()}`);
+                    if (balances.prepaidIns > 0) ledger.prepaidIns.credit.push(`차기이월 ${balances.prepaidIns.toLocaleString()}`);
+                    if (balances.merchandise > 0) ledger.merchandise.credit.push(`차기이월 ${balances.merchandise.toLocaleString()}`);
+                    if (balances.supplies > 0) ledger.supplies.credit.push(`차기이월 ${balances.supplies.toLocaleString()}`);
+                    if (balances.equipment > 0) ledger.equipment.credit.push(`차기이월 ${balances.equipment.toLocaleString()}`);
+                    if (balances.equipmentAcc > 0) ledger.equipmentAcc.debit.push(`차기이월 ${balances.equipmentAcc.toLocaleString()}`);
+                    if (balances.building > 0) ledger.building.credit.push(`차기이월 ${balances.building.toLocaleString()}`);
+                    if (balances.buildingAcc > 0) ledger.buildingAcc.debit.push(`차기이월 ${balances.buildingAcc.toLocaleString()}`);
+                    if (balances.land > 0) ledger.land.credit.push(`차기이월 ${balances.land.toLocaleString()}`);
+                    if (balances.ap > 0) ledger.ap.debit.push(`차기이월 ${balances.ap.toLocaleString()}`);
+                    if (balances.otherPayable > 0) ledger.otherPayable.debit.push(`차기이월 ${balances.otherPayable.toLocaleString()}`);
+                    ledger.capital.debit.push(`차기이월 ${balances.capital.toLocaleString()}`);
+                    ledger.retainedEarnings.debit.push(`차기이월 ${(balances.retainedEarningsBase + netIncome).toLocaleString()}`);
+                }
+
+                let finalRE = balances.retainedEarningsBase + netIncome;
+                let finalRev = closed ? 0 : totalRev;
+                let finalExp = closed ? 0 : totalExp;
+
+                const totalAssets = balances.cash + balances.ar - balances.allowance + balances.prepaidIns + balances.merchandise + balances.supplies + balances.equipment - balances.equipmentAcc + balances.building - balances.buildingAcc + balances.land;
+                const totalLiab = balances.ap + balances.otherPayable;
+                const totalEquity = balances.capital + finalRE;
+
+                return {
+                    ledger,
+                    cash: balances.cash, ar: balances.ar, allowance: balances.allowance, prepaidIns: balances.prepaidIns, merchandise: balances.merchandise, supplies: balances.supplies,
+                    equipment: balances.equipment, equipmentAcc: balances.equipmentAcc, building: balances.building, buildingAcc: balances.buildingAcc, land: balances.land,
+                    totalAssets, ap: balances.ap, otherPayable: balances.otherPayable, totalLiab,
+                    capital: balances.capital, retainedEarnings: finalRE, totalEquity,
+                    totalLiabEquity: totalLiab + totalEquity,
+                    sales: finalRev,
+                    expenses: {
+                        cogs: finalExp > 0 ? balances.cogs : 0,
+                        suppliesExp: finalExp > 0 ? balances.suppliesExp : 0,
+                        rentExp: finalExp > 0 ? balances.rentExp : 0,
+                        badDebtExp: finalExp > 0 ? balances.badDebtExp : 0,
+                        depExp: finalExp > 0 ? balances.depExp : 0,
+                        insuranceExp: finalExp > 0 ? balances.insuranceExp : 0,
+                    },
+                    netIncome: closed ? 0 : netIncome,
+                    originalNetIncome: netIncome,
+                    isClosed: closed
+                };
+            };
+
+            const currentData = calculateLedgerAndBalances(step, isClosed);
+            const currentTargets = transactions[step].targets || [];
+            const activeLedgers = Object.keys(currentData.ledger)
+                .filter(key => currentTargets.includes(key))
+                .map(key => ({ key, ...currentData.ledger[key] }));
+
+            const reversedTransactions = [...transactions.slice(1, step + 1)].reverse();
+
+            return (
+                <div className="max-w-7xl mx-auto p-3 md:p-4 text-xs md:text-sm">
+                    <header className="bg-white rounded-lg shadow-sm p-3 mb-3 border border-slate-100 flex flex-col md:flex-row justify-between items-center gap-2">
+                        <div>
+                            <span className="bg-blue-100 text-blue-700 text-[10px] font-semibold px-2 py-0.5 rounded-full">연세대학교 회계원리 실습 (제4장)</span>
+                            <h1 className="text-lg font-bold text-slate-900 mt-0.5">회계의 순환과정 및 거래의 조정 시뮬레이터</h1>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setShowFullLedger(!showFullLedger)} className={`px-3 py-1.5 rounded-md font-bold text-xs transition ${showFullLedger ? 'bg-amber-600 text-white' : 'bg-slate-200 text-slate-800 hover:bg-slate-300'}`}>
+                                {showFullLedger ? "📋 재무제표 뷰로 돌아가기" : "📖 전체 총계정원장(T-계정) 토글 보기"}
+                            </button>
+                            <button onClick={() => { if(step > 0) handleStepChange(step - 1); }} disabled={step === 0} className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium disabled:opacity-50 transition text-xs">이전 거래</button>
+                            <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2.5 py-1.5 rounded-md">거래 {step} / 15단계</span>
+                            <button onClick={() => { if(step < 15) handleStepChange(step + 1); }} disabled={step === 15} className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium disabled:opacity-50 transition text-xs">다음 거래 ➡️</button>
+                        </div>
+                    </header>
+
+                    <div className="bg-slate-900 text-white rounded-lg p-3 mb-3 shadow-md">
+                        <div className="flex justify-between items-center mb-2 border-b border-slate-800 pb-1">
+                            <span className="text-[11px] uppercase tracking-wider text-blue-400 font-bold">📜 누적 분개장 (최신 분개가 상단 표시)</span>
+                            <span className="text-[11px] text-slate-400">현재: {transactions[step].title}</span>
+                        </div>
+                        <div className="space-y-1.5 max-h-28 overflow-y-auto pr-1">
+                            {reversedTransactions.map((tx, idx) => (
+                                <div key={idx} className="bg-slate-800 p-2 rounded flex flex-col md:flex-row justify-between items-start md:items-center gap-1 border border-slate-700/50">
+                                    <div><span className="text-blue-300 font-semibold mr-2">[{tx.title}]</span><span className="text-slate-300 text-[11px]">{tx.desc}</span></div>
+                                    <div className="text-[11px] flex gap-2 font-mono"><span className="text-blue-200"><strong className="text-blue-400">차)</strong> {tx.debit}</span><span className="text-rose-200"><strong className="text-rose-400">대)</strong> {tx.credit}</span></div>
+                                </div>
+                            ))}
+                            {step === 0 && <p className="text-slate-500 text-center py-2 text-[11px]">아직 입력된 거래가 없습니다. [다음 거래]를 눌러 시작하세요.</p>}
+                        </div>
+                    </div>
+
+                    {showFullLedger ? (
+                        <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-100 mb-3">
+                            <div className="flex justify-between items-center mb-3 border-b pb-2">
+                                <h2 className="text-base font-bold text-slate-900">📖 전체 총계정원장 (마감 및 차기이월 반영 T-계정)</h2>
+                                {isClosed && <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">🔒 기말 마감 완료 상태</span>}
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+                                {Object.keys(currentData.ledger).map(key => {
+                                    const item = currentData.ledger[key];
+                                    return (
+                                        <div key={key} className="bg-slate-50 p-2.5 rounded border">
+                                            <div className="font-bold text-center border-b pb-1 mb-1 text-blue-900 text-[11px]">{item.name}</div>
+                                            <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
+                                                <div className="border-r pr-1"><div className="text-slate-400 text-center border-b">차변</div>{item.debit.length > 0 ? item.debit.map((d, i) => <div key={i} className={d.includes('차기이월') ? 'text-emerald-600 font-bold' : ''}>{d}</div>) : <span className="text-slate-300">-</span>}</div>
+                                                <div className="pl-1"><div className="text-slate-400 text-center border-b">대변</div>{item.credit.length > 0 ? item.credit.map((c, i) => <div key={i} className={c.includes('차기이월') || c.includes('대체') ? 'text-emerald-600 font-bold' : ''}>{c}</div>) : <span className="text-slate-300">-</span>}</div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    ) : null}
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-3">
+                        <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-100 flex flex-col justify-between">
+                            <div>
+                                <div className="flex justify-between items-center border-b pb-2 mb-3">
+                                    <h2 className="text-base font-bold text-slate-900">📊 재무상태표 (Balance Sheet)</h2>
+                                    <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">{isClosed ? "영구계정 기초 이월 완료" : "자산 = 부채 + 자본"}</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-blue-700 mb-2 border-b pb-1 text-xs">■ 자산</h3>
+                                            <div className="space-y-1 text-[11px]">
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('cash') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>현금</span> <span className="font-mono">{currentData.cash.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('ar') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>매출채권</span> <span className="font-mono">{currentData.ar.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors text-rose-600 ${animatingAccounts.includes('allowance') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>(대손충당금)</span> <span className="font-mono">-{currentData.allowance.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('prepaidIns') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>선급보험료</span> <span className="font-mono">{currentData.prepaidIns.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('merchandise') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>상품</span> <span className="font-mono">{currentData.merchandise.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('supplies') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>소모품</span> <span className="font-mono">{currentData.supplies.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('equipment') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>비품</span> <span className="font-mono">{currentData.equipment.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors text-rose-600 ${animatingAccounts.includes('equipmentAcc') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>(비품감가누계)</span> <span className="font-mono">-{currentData.equipmentAcc.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('building') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>건물</span> <span className="font-mono">{currentData.building.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors text-rose-600 ${animatingAccounts.includes('buildingAcc') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>(건물감가누계)</span> <span className="font-mono">-{currentData.buildingAcc.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('land') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>토지</span> <span className="font-mono">{currentData.land.toLocaleString()}</span></div>
+                                            </div>
+                                        </div>
+                                        <div className="border-t pt-2 mt-2 flex justify-between font-bold text-slate-900 bg-blue-50 p-1 rounded text-xs"><span>자산총계</span> <span className="font-mono text-blue-700">{currentData.totalAssets.toLocaleString()}</span></div>
+                                    </div>
+
+                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
+                                        <div className="space-y-2">
+                                            <div>
+                                                <h3 className="font-bold text-rose-700 mb-1 border-b pb-1 text-xs">■ 부채</h3>
+                                                <div className="space-y-1 text-[11px]">
+                                                    <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('ap') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>매입채무</span> <span className="font-mono">{currentData.ap.toLocaleString()}</span></div>
+                                                    <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('otherPayable') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>미지급금</span> <span className="font-mono">{currentData.otherPayable.toLocaleString()}</span></div>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-emerald-700 mb-1 border-b pb-1 text-xs">■ 자본</h3>
+                                                <div className="space-y-1 text-[11px]">
+                                                    <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('capital') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>자본금</span> <span className="font-mono">{currentData.capital.toLocaleString()}</span></div>
+                                                    <div className={`flex justify-between p-0.5 rounded font-bold bg-amber-50 transition-colors ${animatingAccounts.includes('retainedEarnings') ? 'animate-strong-highlight bg-amber-300 text-slate-900' : ''}`}><span>이익잉여금</span> <span className="font-mono">{currentData.retainedEarnings.toLocaleString()}</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="border-t pt-2 mt-2 flex justify-between font-bold text-slate-900 bg-emerald-50 p-1 rounded text-xs"><span>부채와자본총계</span> <span className="font-mono text-emerald-700">{currentData.totalLiabEquity.toLocaleString()}</span></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-100 flex flex-col justify-between">
+                            <div>
+                                <div className="flex justify-between items-center border-b pb-2 mb-3">
+                                    <h2 className="text-base font-bold text-slate-900">📈 손익계산서 (Income Statement)</h2>
+                                    <span className={`text-[11px] px-2 py-0.5 rounded font-semibold ${isClosed ? 'bg-rose-100 text-rose-800' : 'bg-amber-100 text-amber-800'}`}>{isClosed ? "마감 완료 (0)" : "임시계정"}</span>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-amber-700 mb-2 border-b pb-1 text-xs">■ 비용 (차변)</h3>
+                                            <div className="space-y-1 text-[11px]">
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('cogs') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>매출원가</span> <span className="font-mono">{currentData.expenses.cogs.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('rentExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>임차료</span> <span className="font-mono">{currentData.expenses.rentExp.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('suppliesExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>소모품비</span> <span className="font-mono">{currentData.expenses.suppliesExp.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('depExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>감가상각비</span> <span className="font-mono">{currentData.expenses.depExp.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('badDebtExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>대손상각비</span> <span className="font-mono">{currentData.expenses.badDebtExp.toLocaleString()}</span></div>
+                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('insuranceExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>보험료</span> <span className="font-mono">{currentData.expenses.insuranceExp.toLocaleString()}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-blue-700 mb-2 border-b pb-1 text-xs">■ 수익 (대변)</h3>
+                                            <div className={`space-y-1 p-1 rounded transition-colors ${animatingAccounts.includes('sales') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}>
+                                                <div className="flex justify-between"><span>매출</span> <span className="font-mono font-semibold">{currentData.sales.toLocaleString()}</span></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className={`p-2.5 rounded-lg border mt-3 transition-colors ${isClosed ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold text-center' : 'bg-blue-50 border-blue-100'}`}>
+                                    {isClosed ? <div className="text-xs">✨ 기말 마감 완료: 모든 수익·비용 계정이 <span className="font-mono text-rose-600 font-bold">0원</span>으로 소멸되었습니다!</div> : <div className="flex justify-between font-bold text-blue-900 text-xs"><span>당기순이익</span><span className="font-mono">{currentData.netIncome.toLocaleString()}</span></div>}
+                                </div>
+                            </div>
+                            <div className="mt-4 pt-3 border-t border-slate-100">
+                                <button onClick={() => setIsClosed(!isClosed)} className={`w-full py-1.5 rounded-md font-bold text-white text-xs transition ${isClosed ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'}`}>
+                                    {isClosed ? "마감 취소 (원상복구)" : "🔒 기말 장부 마감 실행 (손익계정 0원 마감)"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-100">
+                        <div className="flex justify-between items-center border-b pb-2 mb-3">
+                            <h2 className="text-sm font-bold text-slate-900">📖 최근 영향받은 총계정원장 (T-계정 실시간 전기)</h2>
+                            <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">{isClosed ? "기말 장부 마감 반영 중" : `현재 단계(${transactions[step].title}) 관련 원장`}</span>
+                        </div>
+                        {isClosed ? (
+                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs text-emerald-900 text-center font-medium">🔒 <strong>기말 마감 분개 실행됨:</strong> 수익·비용이 0으로 마감되고 영구계정에 <strong>차기이월</strong>이 반영되었습니다.</div>
+                        ) : step === 0 ? (
+                            <p className="text-slate-400 text-center py-2 text-xs">초기 상태입니다. [다음 거래]를 진행하세요.</p>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                                {activeLedgers.map((ledgerItem) => (
+                                    <div key={ledgerItem.key} className="bg-amber-50/60 p-2.5 rounded-lg border border-amber-200 animate-ledger-highlight">
+                                        <div className="font-bold text-center border-b pb-1 mb-1.5 text-amber-900 text-xs">{ledgerItem.name}</div>
+                                        <div className="grid grid-cols-2 gap-2 font-mono text-[11px]">
+                                            <div className="border-r pr-1"><div className="text-slate-500 text-center border-b mb-0.5">차변</div>{ledgerItem.debit.length > 0 ? ledgerItem.debit.map((item, idx) => <div key={idx} className={idx === ledgerItem.debit.length - 1 ? "font-bold text-blue-700 bg-yellow-100 px-1 rounded" : ""}>{item}</div>) : <div className="text-slate-300">-</div>}</div>
+                                            <div className="pl-1"><div className="text-slate-500 text-center border-b mb-0.5">대변</div>{ledgerItem.credit.length > 0 ? ledgerItem.credit.map((item, idx) => <div key={idx} className={idx === ledgerItem.credit.length - 1 ? "font-bold text-rose-700 bg-yellow-100 px-1 rounded" : ""}>{item}</div>) : <div className="text-slate-300">-</div>}</div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        }
+        ReactDOM.render(<App />, document.getElementById('root'));
+    </script>
+</body>
+</html>
