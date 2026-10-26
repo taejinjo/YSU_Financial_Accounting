@@ -50,7 +50,7 @@
                 { id: 11, title: "⑪ 12월 31일: 임차료 지급", desc: "임차료 20,000원을 현금으로 지급하다.", debit: "임차료 20,000", credit: "현금 20,000", targets: ['rentExp', 'cash'] },
                 { id: 12, title: "⑫ [결산] 감가상각비 계상", desc: "건물 감가상각 500, 비품 감가상각 400 계상", debit: "감가상각비 900", credit: "건물감가상각누계액 500 / 비품감가상각누계액 400", targets: ['depExp', 'buildingAcc', 'equipmentAcc'] },
                 { id: 13, title: "⑬ [결산] 대손상각비 계상", desc: "기말 매출채권에 대한 대손상각비 200 계상", debit: "대손상각비 200", credit: "대손충당금 200", targets: ['badDebtExp', 'allowance'] },
-                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 실사 결과 미사용액 2,000 확인", debit: "소모품비 2,000", credit: "소모품 2,000", targets: ['suppliesExp', 'supplies'] },
+                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 실사 결과 미사용액 2,000 확인", debit: "소모품 2,000", credit: "소모품비 2,000", targets: ['supplies', 'suppliesExp'] },
                 { id: 15, title: "⑮ [결산] 선급보험료 조정", desc: "당기 경과분(10~12월) 900 비용 대체", debit: "보험료 900", credit: "선급보험료 900", targets: ['insuranceExp', 'prepaidIns'] }
             ];
 
