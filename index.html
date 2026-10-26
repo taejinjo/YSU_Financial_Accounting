@@ -42,16 +42,16 @@
                 { id: 3, title: "③ 2월 5일: 상품 매입", desc: "상품 100,000원을 외상(매입채무)으로 매입하다.", debit: "상품 100,000", credit: "매입채무 100,000", targets: ['merchandise', 'ap'] },
                 { id: 4, title: "④ 3월 15일: 비품 취득", desc: "비품 10,000원을 미지급금으로 취득하다.", debit: "비품 10,000", credit: "미지급금 10,000", targets: ['equipment', 'otherPayable'] },
                 { id: 5, title: "⑤ 4월 17일: 미지급금 지급", desc: "미지급금 8,000원을 현금으로 지급하다.", debit: "미지급금 8,000", credit: "현금 8,000", targets: ['otherPayable', 'cash'] },
-                { id: 6, title: "⑥ 6월 20일: 상품 판매 및 원가", desc: "상품 매출 100,000원(현금수령), 매출원가 50,000원", debit: "현금 100,000 / 매출원가 50,000", credit: "매출 100,000 / 상품 50,000", targets: ['cash', 'cogs', 'sales', 'merchandise'] },
-                { id: 7, title: "⑦ 7월 1일: 외상매출 및 원가", desc: "상품 매출 8,000원(외상매출채권), 매출원가 5,000원", debit: "매출채권 8,000 / 매출원가 5,000", credit: "매출 8,000 / 상품 5,000", targets: ['ar', 'cogs', 'sales', 'merchandise'] },
-                { id: 8, title: "⑧ 8월 31일: 소모품비 지출", desc: "소모품비 2,400원을 현금으로 지급하다.", debit: "소모품비 2,400", credit: "현금 2,400", targets: ['suppliesExp', 'cash'] },
+                { id: 6, title: "⑥ 6월 20일: 상품 판매 및 원가", desc: "상품 매출 100,000원(현금수령), 매출원가 50,000원", debit: "현금 100,000 / 매출원가 50,000", credit: "매출 100,000 / 상품 50,000", targets: ['cash', 'cogs', 'sales', 'merchandise', 'retainedEarnings'] },
+                { id: 7, title: "⑦ 7월 1일: 외상매출 및 원가", desc: "상품 매출 8,000원(외상매출채권), 매출원가 5,000원", debit: "매출채권 8,000 / 매출원가 5,000", credit: "매출 8,000 / 상품 5,000", targets: ['ar', 'cogs', 'sales', 'merchandise', 'retainedEarnings'] },
+                { id: 8, title: "⑧ 8월 31일: 소모품비 지출", desc: "소모품비 2,400원을 현금으로 지급하다.", debit: "소모품비 2,400", credit: "현금 2,400", targets: ['suppliesExp', 'cash', 'retainedEarnings'] },
                 { id: 9, title: "⑨ 9월 15일: 매출채권 회수", desc: "매출채권 6,000원을 현금으로 회수하다.", debit: "현금 6,000", credit: "매출채권 6,000", targets: ['cash', 'ar'] },
                 { id: 10, title: "⑩ 10월 1일: 보험료 선급", desc: "보험료 3,600원을 현금으로 미리 지급하다(선급보험료).", debit: "선급보험료 3,600", credit: "현금 3,600", targets: ['prepaidIns', 'cash'] },
-                { id: 11, title: "⑪ 12월 31일: 임차료 지급", desc: "임차료 20,000원을 현금으로 지급하다.", debit: "임차료 20,000", credit: "현금 20,000", targets: ['rentExp', 'cash'] },
-                { id: 12, title: "⑫ [결산] 감가상각비 계상", desc: "건물 감가상각 500, 비품 감가상각 400 계상", debit: "감가상각비 900", credit: "건물감가상각누계액 500 / 비품감가상각누계액 400", targets: ['depExp', 'buildingAcc', 'equipmentAcc'] },
-                { id: 13, title: "⑬ [결산] 대손상각비 계상", desc: "기말 매출채권에 대한 대손상각비 200 계상", debit: "대손상각비 200", credit: "대손충당금 200", targets: ['badDebtExp', 'allowance'] },
-                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 미사용액 반영 (소모품비 감소, 소모품 계상)", debit: "소모품 2,000", credit: "소모품비 2,000", targets: ['supplies', 'suppliesExp'] },
-                { id: 15, title: "⑮ [결산] 선급보험료 조정", desc: "당기 경과분(10~12월) 900 비용 대체", debit: "보험료 900", credit: "선급보험료 900", targets: ['insuranceExp', 'prepaidIns'] }
+                { id: 11, title: "⑪ 12월 31일: 임차료 지급", desc: "임차료 20,000원을 현금으로 지급하다.", debit: "임차료 20,000", credit: "현금 20,000", targets: ['rentExp', 'cash', 'retainedEarnings'] },
+                { id: 12, title: "⑫ [결산] 감가상각비 계상", desc: "건물 감가상각 500, 비품 감가상각 400 계상", debit: "감가상각비 900", credit: "건물감가상각누계액 500 / 비품감가상각누계액 400", targets: ['depExp', 'buildingAcc', 'equipmentAcc', 'retainedEarnings'] },
+                { id: 13, title: "⑬ [결산] 대손상각비 계상", desc: "기말 매출채권에 대한 대손상각비 200 계상", debit: "대손상각비 200", credit: "대손충당금 200", targets: ['badDebtExp', 'allowance', 'retainedEarnings'] },
+                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 미사용액 반영 (소모품비 감소, 소모품 계상)", debit: "소모품 2,000", credit: "소모품비 2,000", targets: ['supplies', 'suppliesExp', 'retainedEarnings'] },
+                { id: 15, title: "⑮ [결산] 선급보험료 조정", desc: "당기 경과분(10~12월) 900 비용 대체", debit: "보험료 900", credit: "선급보험료 900", targets: ['insuranceExp', 'prepaidIns', 'retainedEarnings'] }
             ];
 
             const handleStepChange = (newStep) => {
@@ -118,8 +118,8 @@
                 const totalExp = balances.cogs + balances.suppliesExp + balances.rentExp + balances.badDebtExp + balances.depExp + balances.insuranceExp;
                 const netIncome = totalRev - totalExp;
 
-                // 마감 시 손익계정 0원 처리 및 이익잉여금에 순이익 반영 (중복 가산 방지)
-                let finalRE = balances.retainedEarningsBase + (closed ? netIncome : 0);
+                // 평상시에는 당기순이익이 이익잉여금에 누적 반영, 마감 시에는 손익계산서만 0원 처리
+                let finalRE = balances.retainedEarningsBase + netIncome;
                 let finalRev = closed ? 0 : totalRev;
                 let finalExp = closed ? 0 : totalExp;
 
@@ -275,26 +275,26 @@
                                         <div>
                                             <h3 className="font-bold text-amber-700 mb-2 border-b pb-1 text-xs">■ 비용 (차변)</h3>
                                             <div className="space-y-1 text-[11px]">
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('cogs') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>매출원가</span> <span className="font-mono">{currentData.expenses.cogs.toLocaleString()}</span></div>
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('rentExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>임차료</span> <span className="font-mono">{currentData.expenses.rentExp.toLocaleString()}</span></div>
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('suppliesExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>소모품비</span> <span className="font-mono">{currentData.expenses.suppliesExp.toLocaleString()}</span></div>
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('depExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>감가상각비</span> <span className="font-mono">{currentData.expenses.depExp.toLocaleString()}</span></div>
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('badDebtExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>대손상각비</span> <span className="font-mono">{currentData.expenses.badDebtExp.toLocaleString()}</span></div>
-                                                <div className={`flex justify-between p-0.5 rounded transition-colors ${animatingAccounts.includes('insuranceExp') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}><span>보험료</span> <span className="font-mono">{currentData.expenses.insuranceExp.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>매출원가</span> <span className="font-mono">{currentData.expenses.cogs.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>임차료</span> <span className="font-mono">{currentData.expenses.rentExp.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>소모품비</span> <span className="font-mono">{currentData.expenses.suppliesExp.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>감가상각비</span> <span className="font-mono">{currentData.expenses.depExp.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>대손상각비</span> <span className="font-mono">{currentData.expenses.badDebtExp.toLocaleString()}</span></div>
+                                                <div className="flex justify-between p-0.5 rounded"><span>보험료</span> <span className="font-mono">{currentData.expenses.insuranceExp.toLocaleString()}</span></div>
                                             </div>
                                         </div>
                                     </div>
                                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
                                         <div>
                                             <h3 className="font-bold text-blue-700 mb-2 border-b pb-1 text-xs">■ 수익 (대변)</h3>
-                                            <div className={`space-y-1 p-1 rounded transition-colors ${animatingAccounts.includes('sales') ? 'animate-strong-highlight bg-amber-300 font-bold text-slate-900' : ''}`}>
+                                            <div className="space-y-1 p-1 rounded">
                                                 <div className="flex justify-between"><span>매출</span> <span className="font-mono font-semibold">{currentData.sales.toLocaleString()}</span></div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                                 <div className={`p-2.5 rounded-lg border mt-3 transition-colors ${isClosed ? 'bg-emerald-50 border-emerald-200 text-emerald-900 font-bold text-center' : 'bg-blue-50 border-blue-100'}`}>
-                                    {isClosed ? <div className="text-xs">✨ 기말 마감 완료: 모든 수익·비용 계정이 <span className="font-mono text-rose-600 font-bold">0원</span>으로 소멸되었습니다!</div> : <div className="flex justify-between font-bold text-blue-900 text-xs"><span>당기순이익</span><span className="font-mono">{currentData.netIncome.toLocaleString()}</span></div>}
+                                    {isClosed ? <div className="text-xs">✨ 기말 마감 완료: 이미 이익잉여금으로 당기순이익이 모두 대체되었습니다.</div> : <div className="flex justify-between font-bold text-blue-900 text-xs"><span>당기순이익</span><span className="font-mono">{currentData.netIncome.toLocaleString()}</span></div>}
                                 </div>
                             </div>
                             <div className="mt-4 pt-3 border-t border-slate-100">
@@ -311,7 +311,7 @@
                             <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">{isClosed ? "기말 장부 마감 반영 중" : `현재 단계(${transactions[step].title}) 관련 원장`}</span>
                         </div>
                         {isClosed ? (
-                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs text-emerald-900 text-center font-medium">🔒 <strong>기말 마감 분개 실행됨:</strong> 수익·비용이 0으로 마감되고 영구계정에 이익잉여금이 반영되었습니다.</div>
+                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs text-emerald-900 text-center font-medium">🔒 <strong>기말 마감 실행됨:</strong> 손익계산서의 모든 수익·비용 항목이 0으로 마감되었고, 당기순이익은 이익잉여금 계정에 모두 대체 완료되었습니다.</div>
                         ) : step === 0 ? (
                             <p className="text-slate-400 text-center py-2 text-xs">초기 상태입니다. [다음 거래]를 진행하세요.</p>
                         ) : (
