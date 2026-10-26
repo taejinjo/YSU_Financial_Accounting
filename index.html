@@ -110,7 +110,6 @@
                     if (i === 11) { ledger.rentExp.debit.push("⑪ 20,000"); balances.rentExp += 20000; ledger.cash.credit.push("⑪ 20,000"); balances.cash -= 20000; }
                     if (i === 12) { ledger.depExp.debit.push("⑫ 900"); balances.depExp += 900; ledger.buildingAcc.credit.push("⑫ 500"); balances.buildingAcc += 500; ledger.equipmentAcc.credit.push("⑫ 400"); balances.equipmentAcc += 400; }
                     if (i === 13) { ledger.badDebtExp.debit.push("⑬ 200"); balances.badDebtExp += 200; ledger.allowance.credit.push("⑬ 200"); balances.allowance += 200; }
-                    // 14번 올바른 반영: 차변 소모품 2,000 증가 / 대변 소모품비 2,000 감소
                     if (i === 14) { ledger.supplies.debit.push("⑭ 2,000"); balances.supplies += 2000; ledger.suppliesExp.credit.push("⑭ 2,000"); balances.suppliesExp -= 2000; }
                     if (i === 15) { ledger.insuranceExp.debit.push("⑮ 900"); balances.insuranceExp += 900; ledger.prepaidIns.credit.push("⑮ 900"); balances.prepaidIns -= 900; }
                 }
@@ -119,11 +118,8 @@
                 const totalExp = balances.cogs + balances.suppliesExp + balances.rentExp + balances.badDebtExp + balances.depExp + balances.insuranceExp;
                 const netIncome = totalRev - totalExp;
 
-                if (closed) {
-                    balances.retainedEarningsBase += netIncome;
-                }
-
-                let finalRE = balances.retainedEarningsBase + netIncome;
+                // 마감 시 손익계정 0원 처리 및 이익잉여금에 순이익 반영 (중복 가산 방지)
+                let finalRE = balances.retainedEarningsBase + (closed ? netIncome : 0);
                 let finalRev = closed ? 0 : totalRev;
                 let finalExp = closed ? 0 : totalExp;
 
@@ -197,7 +193,7 @@
                     {showFullLedger ? (
                         <div className="bg-white rounded-lg shadow-sm p-4 border border-slate-100 mb-3">
                             <div className="flex justify-between items-center mb-3 border-b pb-2">
-                                <h2 className="text-base font-bold text-slate-900">📖 전체 총계정원장 (마감 및 차기이월 반영 T-계정)</h2>
+                                <h2 className="text-base font-bold text-slate-900">📖 전체 총계정원장 (마감 반영 T-계정)</h2>
                                 {isClosed && <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-xs font-bold">🔒 기말 마감 완료 상태</span>}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
@@ -222,7 +218,7 @@
                             <div>
                                 <div className="flex justify-between items-center border-b pb-2 mb-3">
                                     <h2 className="text-base font-bold text-slate-900">📊 재무상태표 (Balance Sheet)</h2>
-                                    <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">{isClosed ? "영구계정 기초 이월 완료" : "자산 = 부채 + 자본"}</span>
+                                    <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded font-semibold">{isClosed ? "기말 마감 완료" : "자산 = 부채 + 자본"}</span>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
                                     <div className="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col justify-between">
