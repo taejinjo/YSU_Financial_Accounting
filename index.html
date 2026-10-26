@@ -50,7 +50,7 @@
                 { id: 11, title: "⑪ 12월 31일: 임차료 지급", desc: "임차료 20,000원을 현금으로 지급하다.", debit: "임차료 20,000", credit: "현금 20,000", targets: ['rentExp', 'cash'] },
                 { id: 12, title: "⑫ [결산] 감가상각비 계상", desc: "건물 감가상각 500, 비품 감가상각 400 계상", debit: "감가상각비 900", credit: "건물감가상각누계액 500 / 비품감가상각누계액 400", targets: ['depExp', 'buildingAcc', 'equipmentAcc'] },
                 { id: 13, title: "⑬ [결산] 대손상각비 계상", desc: "기말 매출채권에 대한 대손상각비 200 계상", debit: "대손상각비 200", credit: "대손충당금 200", targets: ['badDebtExp', 'allowance'] },
-                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 실사 결과 미사용액 2,000 확인", debit: "소모품 2,000", credit: "소모품비 2,000", targets: ['supplies', 'suppliesExp'] },
+                { id: 14, title: "⑭ [결산] 소모품 조정", desc: "기말 소모품 미사용액(재고) 반영", debit: "소모품비(또는 소모품 조정)", credit: "소모품", debit: "소모품비 2,000", credit: "소모품 2,000", targets: ['supplies', 'suppliesExp'] },
                 { id: 15, title: "⑮ [결산] 선급보험료 조정", desc: "당기 경과분(10~12월) 900 비용 대체", debit: "보험료 900", credit: "선급보험료 900", targets: ['insuranceExp', 'prepaidIns'] }
             ];
 
@@ -110,7 +110,8 @@
                     if (i === 11) { ledger.rentExp.debit.push("⑪ 20,000"); balances.rentExp += 20000; ledger.cash.credit.push("⑪ 20,000"); balances.cash -= 20000; }
                     if (i === 12) { ledger.depExp.debit.push("⑫ 900"); balances.depExp += 900; ledger.buildingAcc.credit.push("⑫ 500"); balances.buildingAcc += 500; ledger.equipmentAcc.credit.push("⑫ 400"); balances.equipmentAcc += 400; }
                     if (i === 13) { ledger.badDebtExp.debit.push("⑬ 200"); balances.badDebtExp += 200; ledger.allowance.credit.push("⑬ 200"); balances.allowance += 200; }
-                    if (i === 14) { ledger.suppliesExp.debit.push("⑭ 2,000"); balances.suppliesExp += 2000; ledger.supplies.credit.push("⑭ 2,000"); balances.supplies += 2000; }
+                    // 14번 수정: 소모품 사용액(또는 미사용액 조정) 분개 정확히 반영 (차변: 소모품비 2,000 / 대변: 소모품 2,000)
+                    if (i === 14) { ledger.suppliesExp.debit.push("⑭ 2,000"); balances.suppliesExp += 2000; ledger.supplies.credit.push("⑭ 2,000"); balances.supplies -= 2000; }
                     if (i === 15) { ledger.insuranceExp.debit.push("⑮ 900"); balances.insuranceExp += 900; ledger.prepaidIns.credit.push("⑮ 900"); balances.prepaidIns -= 900; }
                 }
 
@@ -119,30 +120,7 @@
                 const netIncome = totalRev - totalExp;
 
                 if (closed) {
-                    ledger.retainedEarnings.credit.push(`ⓖ 순이익 대체: ${netIncome.toLocaleString()}`);
-                    if (balances.sales > 0) ledger.sales.debit.push(`ⓐ 집합손익 대체`);
-                    if (balances.cogs > 0) ledger.cogs.credit.push(`ⓑ 집합손익 대체`);
-                    if (balances.suppliesExp > 0) ledger.suppliesExp.credit.push(`ⓒ 집합손익 대체`);
-                    if (balances.rentExp > 0) ledger.rentExp.credit.push(`ⓓ 집합손익 대체`);
-                    if (balances.badDebtExp > 0) ledger.badDebtExp.credit.push(`ⓔ 집합손익 대체`);
-                    if (balances.depExp > 0) ledger.depExp.credit.push(`ⓕ 집합손익 대체`);
-                    if (balances.insuranceExp > 0) ledger.insuranceExp.credit.push(`ⓖ 집합손익 대체`);
-
-                    ledger.cash.credit.push(`차기이월 ${balances.cash.toLocaleString()}`);
-                    if (balances.ar > 0) ledger.ar.credit.push(`차기이월 ${balances.ar.toLocaleString()}`);
-                    if (balances.allowance > 0) ledger.allowance.debit.push(`차기이월 ${balances.allowance.toLocaleString()}`);
-                    if (balances.prepaidIns > 0) ledger.prepaidIns.credit.push(`차기이월 ${balances.prepaidIns.toLocaleString()}`);
-                    if (balances.merchandise > 0) ledger.merchandise.credit.push(`차기이월 ${balances.merchandise.toLocaleString()}`);
-                    if (balances.supplies > 0) ledger.supplies.credit.push(`차기이월 ${balances.supplies.toLocaleString()}`);
-                    if (balances.equipment > 0) ledger.equipment.credit.push(`차기이월 ${balances.equipment.toLocaleString()}`);
-                    if (balances.equipmentAcc > 0) ledger.equipmentAcc.debit.push(`차기이월 ${balances.equipmentAcc.toLocaleString()}`);
-                    if (balances.building > 0) ledger.building.credit.push(`차기이월 ${balances.building.toLocaleString()}`);
-                    if (balances.buildingAcc > 0) ledger.buildingAcc.debit.push(`차기이월 ${balances.buildingAcc.toLocaleString()}`);
-                    if (balances.land > 0) ledger.land.credit.push(`차기이월 ${balances.land.toLocaleString()}`);
-                    if (balances.ap > 0) ledger.ap.debit.push(`차기이월 ${balances.ap.toLocaleString()}`);
-                    if (balances.otherPayable > 0) ledger.otherPayable.debit.push(`차기이월 ${balances.otherPayable.toLocaleString()}`);
-                    ledger.capital.debit.push(`차기이월 ${balances.capital.toLocaleString()}`);
-                    ledger.retainedEarnings.debit.push(`차기이월 ${(balances.retainedEarningsBase + netIncome).toLocaleString()}`);
+                    balances.retainedEarningsBase += netIncome;
                 }
 
                 let finalRE = balances.retainedEarningsBase + netIncome;
@@ -229,8 +207,8 @@
                                         <div key={key} className="bg-slate-50 p-2.5 rounded border">
                                             <div className="font-bold text-center border-b pb-1 mb-1 text-blue-900 text-[11px]">{item.name}</div>
                                             <div className="grid grid-cols-2 gap-1 font-mono text-[10px]">
-                                                <div className="border-r pr-1"><div className="text-slate-400 text-center border-b">차변</div>{item.debit.length > 0 ? item.debit.map((d, i) => <div key={i} className={d.includes('차기이월') ? 'text-emerald-600 font-bold' : ''}>{d}</div>) : <span className="text-slate-300">-</span>}</div>
-                                                <div className="pl-1"><div className="text-slate-400 text-center border-b">대변</div>{item.credit.length > 0 ? item.credit.map((c, i) => <div key={i} className={c.includes('차기이월') || c.includes('대체') ? 'text-emerald-600 font-bold' : ''}>{c}</div>) : <span className="text-slate-300">-</span>}</div>
+                                                <div className="border-r pr-1"><div className="text-slate-400 text-center border-b">차변</div>{item.debit.length > 0 ? item.debit.map((d, i) => <div key={i}>{d}</div>) : <span className="text-slate-300">-</span>}</div>
+                                                <div className="pl-1"><div className="text-slate-400 text-center border-b">대변</div>{item.credit.length > 0 ? item.credit.map((c, i) => <div key={i}>{c}</div>) : <span className="text-slate-300">-</span>}</div>
                                             </div>
                                         </div>
                                     );
@@ -337,7 +315,7 @@
                             <span className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-semibold">{isClosed ? "기말 장부 마감 반영 중" : `현재 단계(${transactions[step].title}) 관련 원장`}</span>
                         </div>
                         {isClosed ? (
-                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs text-emerald-900 text-center font-medium">🔒 <strong>기말 마감 분개 실행됨:</strong> 수익·비용이 0으로 마감되고 영구계정에 <strong>차기이월</strong>이 반영되었습니다.</div>
+                            <div className="bg-emerald-50 p-3 rounded-lg border border-emerald-200 text-xs text-emerald-900 text-center font-medium">🔒 <strong>기말 마감 분개 실행됨:</strong> 수익·비용이 0으로 마감되고 영구계정에 이익잉여금이 반영되었습니다.</div>
                         ) : step === 0 ? (
                             <p className="text-slate-400 text-center py-2 text-xs">초기 상태입니다. [다음 거래]를 진행하세요.</p>
                         ) : (
